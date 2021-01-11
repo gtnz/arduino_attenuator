@@ -35,7 +35,7 @@ int16_t suming(int16_t *a) {
 // функция вывода на экран текста b с размером s
 void printOLED(int s, String b) {
   display.clearDisplay();
-  display.setCursor(0,0);
+  display.setCursor(4,2);
   display.setTextSize(s);
   display.println(b);
   display.display();
@@ -44,10 +44,11 @@ void printOLED(int s, String b) {
 void setup() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
+  delay(200);
   display.setTextSize(2);
   display.setTextColor(WHITE);
   display.setCursor(1,1);
-  display.println("Go!");
+  display.println("Starting");
   display.display();
   delay(1000);
   int16_t value, real_check_n;
@@ -78,7 +79,7 @@ void loop() {
   bool up, down;
   int16_t checkN;
   uint8_t selected;
-  uint8_t count_button=1;
+  uint8_t count_button=0;
   bool ClickButton[COUNT_BUTTON_PIN+1];
   char print_cof[5];
   int16_t read_n[COUNT_BUTTON_PIN+1];
@@ -104,7 +105,10 @@ void loop() {
     for (int8_t i = 0; i <= COUNT_BUTTON_PIN; i++) {
       if(!ClickButton[i]) count_button=count_button+1;
       }
-    if (count_button!=1) printOLED(3,"ERROR");
+    if (count_button!=1) {
+      printOLED(2,"ERROR 01");
+      set_button=true;
+    }
     else {
       for (int8_t i = 0; i <= COUNT_BUTTON_PIN; i++) {
         if (!ClickButton[i]) {
