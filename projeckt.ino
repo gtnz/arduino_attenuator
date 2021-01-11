@@ -4,6 +4,7 @@
 #define ENCODER_PINB      3
 #define STEP              25
 #define IN_ROUND          1000
+#define OLED_RESET 4
 
 #include <avr/eeprom.h>
 #include "Arduino.h"
@@ -12,7 +13,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#define OLED_RESET 4
+#include <avr/wdt.h>
 
 const int8_t BUTTON_PIN[] = {4,5,6,7,8,9,10,11};
 const uint16_t p[]={0,2,4,6,8,10,12,14,16,18};
@@ -50,7 +51,7 @@ void setup() {
   display.setCursor(1,1);
   display.println("Starting");
   display.display();
-  delay(1000);
+  delay(400);
   int16_t value, real_check_n;
   int16_t check_n;
   Serial.begin(9600);
@@ -74,6 +75,7 @@ void setup() {
 }
 
 void loop() {
+  wdt_enable(WDTO_1S);
   float printcof;
   float cof = 1;
   bool up, down;
@@ -133,4 +135,5 @@ void loop() {
       }
     }
   }
+  wdt_reset();
 }
