@@ -46,7 +46,7 @@ void setup() {
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(WHITE);
-  display.setCursor(0,0);
+  display.setCursor(1,1);
   display.println("Go!");
   display.display();
   delay(1000);
@@ -66,6 +66,7 @@ void setup() {
     for (int8_t i = 0; i <= COUNT_BUTTON_PIN; i++)
       n[i]=IN_ROUND;
     check_n = suming(n);
+    Serial.println("запись в память");
     eeprom_write_word(0, check_n);
     eeprom_write_block((void*)&n, 2, sizeof(n));
   }
@@ -77,7 +78,7 @@ void loop() {
   bool up, down;
   int16_t checkN;
   uint8_t selected;
-  uint8_t count_button=0;
+  uint8_t count_button=1;
   bool ClickButton[COUNT_BUTTON_PIN+1];
   char print_cof[5];
   int16_t read_n[COUNT_BUTTON_PIN+1];
@@ -88,17 +89,18 @@ void loop() {
     ClickButton[i]=digitalRead(BUTTON_PIN[i]);
   }
   if (digitalRead(BUTTON_SET_PIN)) { // проверка кноки управления
-    Serial.println("кнопка управления отжата");
     if (set_button){
      set_button=!set_button;
+     display.invertDisplay(false);
     }
     for (int i = 0; i<=COUNT_BUTTON_PIN; i++) {
-      if (!ClickButton[i]) cof=cof*float(n[i])/IN_ROUND;
+      if (!ClickButton[i]) cof=cof*float(n[i])/IN_ROUND; // подсчет коэффициента 
     }
-    dtostrf(cof, 1, 3, print_cof);
-    printOLED(3,String(print_cof));
+    dtostrf(cof, 1, 3, print_cof); // преобразование коэффициента из float в строку вида x.xxx
+    printOLED(4,print_cof); 
   } else 
   {
+    display.invertDisplay(true);
     for (int8_t i = 0; i <= COUNT_BUTTON_PIN; i++) {
       if(!ClickButton[i]) count_button=count_button+1;
       }
@@ -118,7 +120,7 @@ void loop() {
       n[selected]=encoder*STEP;
       cof = float(n[selected])/IN_ROUND;
       dtostrf(cof, 1, 3, print_cof);
-      printOLED(3,String(print_cof));
+      printOLED(4,print_cof);
       eeprom_read_block((void*)&read_n, 2, sizeof(read_n));
       if (read_n[selected]!=n[selected]){
         Serial.println("запись в память");
