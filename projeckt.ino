@@ -37,6 +37,7 @@ int16_t suming(int16_t *a) {
 void printOLED(int s, String b) {
   display.clearDisplay();
   display.setCursor(4,2);
+  display.setTextColor(WHITE);
   display.setTextSize(s);
   display.println(b);
   display.display();
