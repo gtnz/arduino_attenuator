@@ -15,8 +15,8 @@
 #include <Adafruit_SSD1306.h>
 #include <avr/wdt.h>
 
-const int8_t BUTTON_PIN[] = {4,5,6,7,8,9,10,11};
-const uint16_t p[]={0,2,4,6,8,10,12,14,16,18};
+const int8_t BUTTON_PIN[] = {4,5,6,7,8,9,10,11};  // пини с кнопками
+// const uint16_t p[]={0,2,4,6,8,10,12,14,16,18};
 uint8_t last_button = 0;
 Adafruit_SSD1306 display(OLED_RESET);
 String printValue; 
@@ -43,39 +43,37 @@ void printOLED(int s, String b) {
 }
 
 void setup() {
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  display.clearDisplay();
-  delay(200);
-  display.setTextSize(2);
-  display.setTextColor(WHITE);
-  display.setCursor(1,1);
-  display.println("Starting");
-  display.display();
-  delay(400);
   int16_t value, real_check_n;
   int16_t check_n;
   Serial.begin(9600);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+  delay(200);
+  printOLED(2,"Starting");
   Serial.println("Start");
-  pinMode(BUTTON_SET_PIN, INPUT_PULLUP);
+  delay(400);
   encoder.begin(); // инициализация енкодера
   for (int i = 0; i<=COUNT_BUTTON_PIN; i++) { //инициализация пинов
     pinMode(BUTTON_PIN[i], INPUT_PULLUP);
   } 
+  pinMode(BUTTON_SET_PIN, INPUT_PULLUP);
+  
   // чтение из памяти показателей n
   eeprom_read_block((void*)&n, 2, sizeof(n));
   check_n=eeprom_read_word(0);
   if (check_n != suming(n)) {
-    for (int8_t i = 0; i <= COUNT_BUTTON_PIN; i++)
+    for (int8_t i = 0; i <= COUNT_BUTTON_PIN; i++) {
       n[i]=IN_ROUND;
+      Serial.println("запись в память");
+    }
     check_n = suming(n);
-    Serial.println("запись в память");
     eeprom_write_word(0, check_n);
     eeprom_write_block((void*)&n, 2, sizeof(n));
   }
 }
 
 void loop() {
-  wdt_enable(WDTO_1S);
+  wdt_enable(WDTO_1S); // через 1 секунду уйдет в рестарт, если не сбросится в конце лупа
   float printcof;
   float cof = 1;
   bool up, down;
@@ -87,18 +85,20 @@ void loop() {
   int16_t read_n[COUNT_BUTTON_PIN+1];
   up = encoder.upClick();
   down = encoder.downClick();
+
 // опрос кнопок
   for (int8_t i = 0; i<=COUNT_BUTTON_PIN; i++) {
     ClickButton[i]=digitalRead(BUTTON_PIN[i]);
   }
   if (digitalRead(BUTTON_SET_PIN)) { // проверка кноки управления
-    if (set_button){
+    if (set_button){ // была ли нажата кнопка управления в прошлом такте
      set_button=!set_button;
-     display.invertDisplay(false);
+     display.invertDisplay(false); 
     }
     for (int i = 0; i<=COUNT_BUTTON_PIN; i++) {
       if (!ClickButton[i]) cof=cof*float(n[i])/IN_ROUND; // подсчет коэффициента 
     }
+//    Serial.println(cof*10);
     dtostrf(cof, 1, 3, print_cof); // преобразование коэффициента из float в строку вида x.xxx
     printOLED(4,print_cof); 
   } else 
@@ -135,5 +135,5 @@ void loop() {
       }
     }
   }
-  wdt_reset();
+  wdt_reset(); // сброс таймера на рестарт
 }
