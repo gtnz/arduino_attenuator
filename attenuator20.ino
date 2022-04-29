@@ -16,10 +16,10 @@
 // NewEncoder encoder(ENCODER_PINA, ENCODER_PINB, 0, 10000, 0, FULL_PULSE); 
 U8G2_ST7565_ERC12864_1_4W_SW_SPI u8g2(U8G2_R0, /* scl=*/ 5, /* si=*/ 11, /* cs=*/ 10, /* rs=*/ 9, /* rse=*/ 8);
 
-uint16_t e;
+uint16_t e, cof_save;
 uint8_t control = 0;
 bool set_button=false;
-float cof;
+float cof, e_final;
 
 // Для энкодера
 #define btn_long_push 1000   // Длительность долинного нажатия кнопки
@@ -35,7 +35,7 @@ void setup(void) {
   u8g2.begin(); 
   u8g2.setContrast (0); 
   u8g2.enableUTF8Print();
-  e = eeprom_read_float(0);
+  cof_save = eeprom_read_float(0);  // чтение сохраненного коэфициента
 // Для энкодера
   pinMode(A1,INPUT_PULLUP); // ENC-A
   pinMode(A2,INPUT_PULLUP); // ENC-B
@@ -49,33 +49,37 @@ void setup(void) {
  
 void loop(void) {
   uint16_t read_e;
-  char print_cof[5]="";
+  char print_number[5]="";
+  char print_line[11]="";
   delay(100);
   if (digitalRead(BUTTON_SET_PIN)) { // если кнопка управления нажата
     if (!set_button){ // была ли нажата кнопка управления в прошлом такте
       set_button=!set_button;
-      enc_rotation=e;
+      enc_rotation=cof_save;
     }
-    e=enc_rotation;
+    cof_save=enc_rotation;
     }
-  else {
-    if (set_button){ // была ли нажата кнопка управления в прошлом такте
+  else {                            // кнопка управления не нажата
+    if (set_button){                // была ли нажата кнопка управления в прошлом такте
     set_button=!set_button;  
     read_e=eeprom_read_float(0);
-    if (read_e!=e){
+    if (read_e!=cof_save){
         Serial.println("запись в память");
-        eeprom_write_float(0,e);
+        eeprom_write_float(0,cof_save);
       }
     }
   }
-  cof = 1.0*e*STEP/IN_ROUND;
-  Serial.println(set_button);
-  dtostrf(cof, 1, 3, print_cof);
+  cof = 1.0*cof_save*STEP/IN_ROUND;
+  e = analogRead(6);
+  Serial.println(e);
+  e = e/MIRROR;
+  e_final = e*cof;
+  dtostrf(e_final, 1, 3, print_number);
   u8g2.firstPage();
   do {
-    u8g2.setFont(u8g2_font_ncenB14_tr);
+    u8g2.setFont(u8g2_font_10x20_tn);
     u8g2.setCursor(0, 20);
-    u8g2.print(print_cof);
+    u8g2.print(print_number);
   } while ( u8g2.nextPage() );
 }
 
