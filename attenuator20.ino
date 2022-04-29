@@ -10,6 +10,8 @@
 #define STEP              25
 #define IN_ROUND          1000
 #define BUTTON_SET_PIN    12
+#define DEOD_PIN          A6
+#define MIRROR            1
 
 // NewEncoder encoder(ENCODER_PINA, ENCODER_PINB, 0, 10000, 0, FULL_PULSE); 
 U8G2_ST7565_ERC12864_1_4W_SW_SPI u8g2(U8G2_R0, /* scl=*/ 5, /* si=*/ 11, /* cs=*/ 10, /* rs=*/ 9, /* rse=*/ 8);
@@ -37,7 +39,9 @@ void setup(void) {
 // Для энкодера
   pinMode(A1,INPUT_PULLUP); // ENC-A
   pinMode(A2,INPUT_PULLUP); // ENC-B
-  pinMode(A3,INPUT_PULLUP); // BUTTON
+  pinMode(A3,INPUT_PULLUP); // BUTTON(энкодер)
+
+  pinMode(DEOD_PIN, INPUT); //аналоговый вход для диода
 
   PCICR =  0b00000010; // PCICR |= (1<<PCIE1); Включить прерывание PCINT1
   PCMSK1 = 0b00001110; // Разрешить прерывание для  A1, A2, A3
@@ -53,7 +57,6 @@ void loop(void) {
       enc_rotation=e;
     }
     e=enc_rotation;
-//    cof=encoder*STEP;
     }
   else {
     if (set_button){ // была ли нажата кнопка управления в прошлом такте
