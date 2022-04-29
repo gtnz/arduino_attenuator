@@ -50,7 +50,8 @@ void setup(void) {
 void loop(void) {
   uint16_t read_e;
   char print_number[5]="";
-  char print_line[11]="";
+  String print_line_2="";
+  String print_line_1="";
   delay(100);
   if (digitalRead(BUTTON_SET_PIN)) { // если кнопка управления нажата
     if (!set_button){ // была ли нажата кнопка управления в прошлом такте
@@ -58,6 +59,10 @@ void loop(void) {
       enc_rotation=cof_save;
     }
     cof_save=enc_rotation;
+    print_line_2="коэффициент";
+    print_line_1="";
+    cof = 1.0*cof_save*STEP/IN_ROUND;
+    dtostrf(cof, 1, 3, print_number);
     }
   else {                            // кнопка управления не нажата
     if (set_button){                // была ли нажата кнопка управления в прошлом такте
@@ -68,18 +73,32 @@ void loop(void) {
         eeprom_write_float(0,cof_save);
       }
     }
+    print_line_2=String("МДж/cм");
+    print_line_1="2";
+    cof = 1.0*cof_save*STEP/IN_ROUND;
+    e = analogRead(6);
+    for (int i=0; i <= 20; i++) {
+      if (e < analogRead(6)) {
+        e = analogRead(6);
+      }
+      delay(100);
+    }
+    Serial.println(e);
+    e = e/MIRROR;
+    e_final = e*cof;
+    dtostrf(e_final, 1, 3, print_number);
   }
-  cof = 1.0*cof_save*STEP/IN_ROUND;
-  e = analogRead(6);
-  Serial.println(e);
-  e = e/MIRROR;
-  e_final = e*cof;
-  dtostrf(e_final, 1, 3, print_number);
   u8g2.firstPage();
   do {
-    u8g2.setFont(u8g2_font_10x20_tn);
-    u8g2.setCursor(0, 20);
+    u8g2.setFont(u8g2_font_logisoso32_tn);
+    u8g2.setCursor(0, 35);
     u8g2.print(print_number);
+    u8g2.setFont(u8g2_font_unifont_t_cyrillic);
+    u8g2.setCursor(0, 48);
+    u8g2.print(print_line_2);
+    u8g2.setFont(u8g2_font_6x12_tf);
+    u8g2.setCursor(48, 43);
+    u8g2.print(print_line_1);    
   } while ( u8g2.nextPage() );
 }
 
