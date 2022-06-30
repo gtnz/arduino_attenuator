@@ -12,15 +12,15 @@
 #define BUTTON_SET_PIN    12
 #define DEOD_PIN          7
 #define MIRROR            1
-#define IN_SEC            4000
+#define IN_SEC            1000
 
 // NewEncoder encoder(ENCODER_PINA, ENCODER_PINB, 0, 10000, 0, FULL_PULSE); 
 U8G2_ST7565_ERC12864_1_4W_SW_SPI u8g2(U8G2_R0, /* scl=*/ 11, /* si=*/ 12, /* cs=*/ 8, /* rs=*/10 , /* rse=*/9 );
 
-uint16_t e, cof_save;
+uint16_t cof_save;
 uint8_t control = 0;
 bool set_button=false;
-float cof, e_final, zero;
+float cof, e=0, zero;
 
 // Для энкодера
 #define btn_long_push 1000   // Длительность долинного нажатия кнопки
@@ -48,21 +48,25 @@ void setup(void) {
   PCMSK1 = 0b00001110; // Разрешить прерывание для  A1, A2, A3
   Serial.println("start!");
   // Подсчет нуля
-  for (int i=0; i <= 8000; i++) {
-      zero = zero+analogRead(DEOD_PIN);
+  for (int i=0; i <= 4000; i++) {
+      zero = zero+analogRead(DEOD_PIN)/4;
+//      Serial.println(i);
   }
-    zero = zero/8000-2;
+    zero = zero/4000;
     Serial.println(zero);
+    Serial.println("____________");
 }
  
 void loop(void) {
-  float cof, e_final_1, e_summ;
-  int sec[4000];
+  float cof, e_summ;
+  uint8_t sec[IN_SEC];
+  uint8_t count_pulse=0;
   uint16_t read_e, endpulse=0;
-  uint32_t pulse = 0;
+  uint16_t pulse = 0;
+  uint16_t pulse_L = 0;
   char print_number[5]="";
-  String print_line_2="";
-  String print_line_1="";
+//  String print_line_2="";
+//  String print_line_1="";
 //  delay(100);
   if (digitalRead(BUTTON_SET_PIN)) { // если кнопка управления нажата
     if (!set_button){ // была ли нажата кнопка управления в прошлом такте
@@ -70,8 +74,8 @@ void loop(void) {
       enc_rotation=cof_save;
     }
     cof_save=enc_rotation;
-    print_line_2="коэффициент";
-    print_line_1="";
+//    print_line_2="коэффициент";
+//    print_line_1="";
     cof = 1.0*cof_save*STEP/IN_ROUND;
     dtostrf(cof, 1, 3, print_number);
     }
@@ -84,38 +88,41 @@ void loop(void) {
         eeprom_write_float(0,cof_save);
       }
     }
-    print_line_2=String("МДж/cм");
-    print_line_1="2";
+//    print_line_2=String("МДж/cм");
+//    print_line_1="2";
     cof = 1.0*cof_save*STEP/IN_ROUND;
     e_summ=0;
-    Serial.println(e_summ);
-    for (int i=0; i <= IN_SEC; i++) {
-      sec[i] = analogRead(DEOD_PIN);
+    Serial.println("-----");
+    delay(1);
+    for (int i=0; i < IN_SEC; i++) {
+      sec[i] = analogRead(DEOD_PIN)/4;
     }
+    Serial.println("=====");
     pulse = 0;
+    Serial.println(sec[1]);
     for (int i=0; i <=IN_SEC; i++) {
       if (sec[i]>zero*1.25){            // обнаружение импульса 
-        endpulse=i+100; 
-        while (sec[i]>zero*1.25) {
+        endpulse=i+100;
+        count_pulse=count_pulse+1;  
+        while (sec[i]>zero*1.25 && i<=IN_SEC) {
+          Serial.println(sec[i]);
+          pulse_L++;
           pulse = pulse + sec[i];
           i=i+1;
         }
-      e_summ=e_summ+pulse/100;
+        e_summ=e_summ+pulse/count_pulse;
       }
     }
     Serial.println(e_summ);
-    Serial.println(e);
-    e = 1.0*e/MIRROR;
-    e_final_1 = 1.0*e_summ/16000-zero; // для настройки 
-    if (abs(e_final_1-e_final)>0) {
-      e_final = e_final_1; // для настройки 
-//      e_final = e_summ*cof;
+      if (abs(1.0*e_summ/MIRROR-e)>0){
+      e = 1.0*e_summ/MIRROR;
     }
-    if (e_final<3) {
-      e_final = 0;
+    if (e<3) {
+      e = 0;
     }
-    dtostrf(e_final, 1, 1, print_number);
+    dtostrf(e, 1, 1, print_number);
   }
+  Serial.println(print_number);
   u8g2.firstPage();
   do {
     u8g2.setFont(u8g2_font_logisoso32_tn);
@@ -123,10 +130,10 @@ void loop(void) {
     u8g2.print(print_number);
     u8g2.setFont(u8g2_font_unifont_t_cyrillic);
     u8g2.setCursor(0, 48);
-    u8g2.print(print_line_2);
+    u8g2.print(String("МДж/cм"));
     u8g2.setFont(u8g2_font_6x12_tf);
     u8g2.setCursor(48, 43);
-    u8g2.print(print_line_1);    
+    u8g2.print("2");    
   } while ( u8g2.nextPage() );
 }
 
