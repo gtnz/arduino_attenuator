@@ -62,7 +62,7 @@ void loop(void) {
   uint8_t sec[IN_SEC];
   uint8_t count_pulse=0;
   uint16_t read_e, endpulse=0;
-  uint16_t pulse = 0;
+  uint32_t pulse = 0;
   uint16_t pulse_L = 0;
   char print_number[5]="";
 //  String print_line_2="";
@@ -100,26 +100,29 @@ void loop(void) {
     Serial.println("=====");
     pulse = 0;
     Serial.println(sec[1]);
-    for (int i=0; i <=IN_SEC; i++) {
+    for (int i=0; i <=IN_SEC-50; i++) {
+      while (sec[i]>zero*1.25 && i<=IN_SEC) {} // отбрасывание куска импульса в начале
       if (sec[i]>zero*1.25){            // обнаружение импульса 
-        endpulse=i+100;
+//        endpulse=i+100;
         count_pulse=count_pulse+1;  
         while (sec[i]>zero*1.25 && i<=IN_SEC) {
-          Serial.println(sec[i]);
-          pulse_L++;
+//          Serial.println(sec[i]);
+          pulse_L=pulse_L+1;
           pulse = pulse + sec[i];
           i=i+1;
         }
+        pulse=pulse/pulse_L;
         e_summ=e_summ+pulse/count_pulse;
       }
     }
     Serial.println(e_summ);
-      if (abs(1.0*e_summ/MIRROR-e)>0){
+      if (abs(1.0*e_summ/MIRROR-e)>5){
       e = 1.0*e_summ/MIRROR;
     }
     if (e<3) {
       e = 0;
     }
+    Serial.println(count_pulse);
     dtostrf(e, 1, 1, print_number);
   }
   Serial.println(print_number);
