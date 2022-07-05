@@ -101,7 +101,7 @@ void loop(void) {
     pulse = 0;
     Serial.println(sec[1]);
     for (int i=0; i <=IN_SEC-50; i++) {
-      while (sec[i]>zero*1.25 && i<=IN_SEC) {} // отбрасывание куска импульса в начале
+      while (sec[i]>zero*1.25 && i<=IN_SEC) {i++;} // отбрасывание куска импульса в начале
       if (sec[i]>zero*1.25){            // обнаружение импульса 
 //        endpulse=i+100;
         count_pulse=count_pulse+1;  
