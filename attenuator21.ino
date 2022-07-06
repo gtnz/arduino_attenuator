@@ -3,7 +3,6 @@
 #include <U8g2lib.h>
 #include <avr/eeprom.h>
 #include <SPI.h>
-// #include "NewEncoder.h"
 
 #define ENCODER_PINA      2
 #define ENCODER_PINB      3
@@ -14,18 +13,10 @@
 #define MIRROR            1
 #define IN_SEC            1000
 
-// NewEncoder encoder(ENCODER_PINA, ENCODER_PINB, 0, 10000, 0, FULL_PULSE); 
 U8G2_ST7565_ERC12864_1_4W_SW_SPI u8g2(U8G2_R0, /* scl=*/ 11, /* si=*/ 12, /* cs=*/ 8, /* rs=*/10 , /* rse=*/9 );
 
 bool set_button=false;
 float e=0, zero;
-
-// Для энкодера
-#define btn_long_push 1000   // Длительность долинного нажатия кнопки
-volatile uint8_t lastcomb=7, enc_state, btn_push=0;
-volatile int enc_rotation=0, btn_enc_rotate=0;
-volatile boolean btn_press=0;
-volatile uint32_t timer;
 
 void setup(void) {
 //  encoder.begin();
@@ -73,11 +64,14 @@ void loop(void) {
     pulse = 0;
     Serial.println(sec[1]);
     int i=0;
-    while (sec[i]>zero && i<IN_SEC) { // отбрасывание куска импульса в начале;
-      i++;
+    if (sec[i]>zero && false) {                   // по прежнему не работает !!!!
+      while (sec[i]>(zero+10)*1.25 && i<IN_SEC) { // отбрасывание куска импульса в начале;
+        i++;
+      }
+      Serial.println(i);
     }
     while (i <=IN_SEC-50) {
-      if (sec[i]>zero*1.25 && i<=IN_SEC-1){            // обнаружение импульса
+      if (sec[i]>zero*1.25 && i<=IN_SEC){            // обнаружение импульса
 //        Serial.println(sec[i]);
         count_pulse=count_pulse+1;
         while (sec[i]>zero*1.25 && i<IN_SEC) {
@@ -88,7 +82,9 @@ void loop(void) {
         }
         pulse=pulse/pulse_L;
         e_summ=e_summ+pulse/count_pulse;
-        Serial.println("=");
+        Serial.print("Pulse_L ");
+        Serial.println(pulse_L);
+        pulse_L=0;
       }
       i++;
     }
@@ -114,44 +110,4 @@ void loop(void) {
     u8g2.setCursor(48, 43);
     u8g2.print("2");    
   } while ( u8g2.nextPage() );
-}
-
-// Для энкодера
-//****************************************
-ISR (PCINT1_vect) //Обработчик прерывания от пинов A1, A2, A3
-{
-  uint8_t comb = bitRead(PINC, 3) << 2 | bitRead( PINC, 2)<<1 | bitRead(PINC, 1); //считываем состояние пинов энкодера и кнопки
-
- if (comb == 3 && lastcomb == 7) btn_press=1; //Если было нажатие кнопки, то меняем статус
- 
- if (comb == 4)                         //Если было промежуточное положение энкодера, то проверяем его предыдущее состояние 
- {
-    if (lastcomb == 5) --enc_rotation; //вращение по часовой стрелке
-    if (lastcomb == 6) ++enc_rotation; //вращение против частовой
-    enc_state=1;                       // был поворот энкодера    
-    btn_enc_rotate=0;                  //обнулить показания вращения с нажатием
-  }
-  
-   if (comb == 0)                      //Если было промежуточное положение энкодера и нажатие, то проверяем его предыдущее состояние 
-   {
-    if (lastcomb == 1) --btn_enc_rotate; //вращение по часовой стрелке
-    if (lastcomb == 2) ++btn_enc_rotate; //вращение против частовой
-    enc_state=2;                        // был поворот энкодера с нажатием  
-    enc_rotation=0;                     //обнулить показания вращения без нажатия
-    btn_press=0;                         //обнулить показания кнопки
-   }
-
-   if (comb == 7 && lastcomb == 3 && btn_press) //Если было отпусание кнопки, то проверяем ее предыдущее состояние 
-   {
-    if (millis() - timer > btn_long_push)         // проверяем сколько прошло миллисекунд
-    {
-      enc_state=4;                              // было длинное нажатие 
-    } else {
-             enc_state=3;                    // было нажатие 
-            }
-      btn_press=0;                           //обнулить статус кнопки
-    }
-   
-  timer = millis();                       //сброс таймера
-  lastcomb = comb;                        //сохраняем текущее состояние энкодера
 }
