@@ -59,7 +59,7 @@ void loop(void) {
   e_summ=0;
   Serial.println("-----");
   delay(1);
-  for (int j=0; j < 15; j++) {
+  for (int j=0; j < 40; j++) {
     for (int i=0; i < IN_SEC; i++) {
       sec[i] = analogRead(DEOD_PIN)/4;
     }
@@ -85,10 +85,10 @@ void loop(void) {
         }
 //        pulse=pulse/pulse_L;
         e_summ=e_summ+pulse;
-        Serial.print("Pulse_L ");
-        Serial.println(pulse_L);
-        Serial.print("Pulse ");
-        Serial.println(pulse);
+//        Serial.print("Pulse_L ");
+//        Serial.println(pulse_L);
+//        Serial.print("Pulse ");
+//        Serial.println(pulse);
         pulse_L=0;
         pulse=0;
       }
@@ -100,7 +100,7 @@ void loop(void) {
   }
   Serial.print("e_summ ");
   Serial.println(e_summ);
-  if (abs(1.0*e_summ/MIRROR-e)>15){                 // Устранение дребезга на циферблате
+  if (abs(1.0*e_summ/MIRROR-e)>0.05*e_summ){        // Устранение дребезга на циферблате
     e = 1.0*e_summ/MIRROR;
   }
   if (e<0) {
