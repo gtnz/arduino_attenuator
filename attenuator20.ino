@@ -85,10 +85,7 @@ void loop(void) {
         }
 //        pulse=pulse/pulse_L;
         e_summ=e_summ+pulse;
-//        Serial.print("Pulse_L ");
-//        Serial.println(pulse_L);
-//        Serial.print("Pulse ");
-//        Serial.println(pulse);
+
         pulse_L=0;
         pulse=0;
       }
